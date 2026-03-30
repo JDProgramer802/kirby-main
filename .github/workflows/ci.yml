@@ -1,0 +1,42 @@
+# Validación rápida sin secretos (npm ci + sintaxis).
+# Úsalo como check requerido en branch protection; el workflow "WhatsApp Bot" necesita DATABASE_URL y BOT_OWNER.
+
+name: CI
+
+on:
+  push:
+    paths:
+      - 'bot/**'
+      - '.github/workflows/ci.yml'
+  pull_request:
+    paths:
+      - 'bot/**'
+      - '.github/workflows/ci.yml'
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: bot
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: bot/package-lock.json
+
+      - name: Instalar dependencias (npm ci)
+        run: npm ci
+
+      - name: Comprobar sintaxis
+        run: npm run check
