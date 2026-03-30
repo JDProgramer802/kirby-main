@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Configuración · Panel</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-[#0f0f0f] text-gray-100 flex">
+  <div id="layout-mount"></div>
+  <main class="flex-1 p-4 md:p-8 max-w-4xl w-full">
+    <h1 class="text-2xl font-semibold mb-2">Configuración del bot</h1>
+    <p class="text-gray-400 text-sm mb-8">
+      Los valores se guardan en PostgreSQL (<code class="text-violet-400">panel_config</code>). El bot los aplica al
+      reiniciar. <code class="text-violet-400">DATABASE_URL</code> del pool sigue siendo el del <code>.env</code> /
+      Secret hasta reinicio; para GitHub Actions copia el export al final.
+    </p>
+
+    <form id="cfg" class="space-y-8">
+      <section class="rounded-2xl border border-white/10 bg-[#1a1a1a] p-6">
+        <h2 class="text-lg font-medium text-violet-300 mb-4">Bot</h2>
+        <div class="grid gap-4 md:grid-cols-2">
+          <label class="block text-sm">BOT_PREFIX <input name="BOT_PREFIX" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" /></label>
+          <label class="block text-sm">BOT_NAME <input name="BOT_NAME" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" /></label>
+          <label class="block text-sm md:col-span-2">BOT_OWNER <input name="BOT_OWNER" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" placeholder="521...@s.whatsapp.net" /></label>
+          <label class="block text-sm md:col-span-2">SESSION_DIR <input name="SESSION_DIR" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" /></label>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-white/10 bg-[#1a1a1a] p-6">
+        <h2 class="text-lg font-medium text-violet-300 mb-4">Base de datos</h2>
+        <label class="block text-sm">DATABASE_URL
+          <textarea name="DATABASE_URL" rows="3" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2 font-mono text-xs" placeholder="postgresql://..."></textarea>
+        </label>
+        <p class="text-xs text-gray-500 mt-2">Si el campo muestra máscara, pega la URL completa de nuevo para actualizarla.</p>
+        <button type="button" id="testDb" class="mt-3 px-4 py-2 rounded-lg bg-white/10 hover:bg-white/15 text-sm">Probar conexión</button>
+        <span id="testDbResult" class="ml-3 text-sm"></span>
+      </section>
+
+      <section class="rounded-2xl border border-white/10 bg-[#1a1a1a] p-6">
+        <h2 class="text-lg font-medium text-violet-300 mb-4">GitHub (banners / uploads)</h2>
+        <div class="grid gap-4">
+          <label class="block text-sm">GITHUB_TOKEN <input name="GITHUB_TOKEN" type="password" autocomplete="off" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" /></label>
+          <label class="block text-sm">GITHUB_REPO <input name="GITHUB_REPO" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" /></label>
+          <label class="block text-sm">GITHUB_BRANCH <input name="GITHUB_BRANCH" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" /></label>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-white/10 bg-[#1a1a1a] p-6">
+        <h2 class="text-lg font-medium text-violet-300 mb-4">Panel web</h2>
+        <div class="grid gap-4 md:grid-cols-2">
+          <label class="block text-sm">JWT_SECRET <input name="JWT_SECRET" type="password" autocomplete="off" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" /></label>
+          <label class="block text-sm">WEB_PORT <input name="WEB_PORT" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" placeholder="3000" /></label>
+        </div>
+      </section>
+
+      <section class="rounded-2xl border border-white/10 bg-[#1a1a1a] p-6">
+        <h2 class="text-lg font-medium text-violet-300 mb-4">Avanzado</h2>
+        <label class="block text-sm">LOG_LEVEL <input name="LOG_LEVEL" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" placeholder="silent" /></label>
+        <label class="block text-sm mt-4">WA_SKIP_VERSION_FETCH (1 = sí) <input name="WA_SKIP_VERSION_FETCH" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2" placeholder="0" /></label>
+        <label class="block text-sm mt-4">SUBBOTS (JSON)
+          <textarea name="SUBBOTS" rows="4" class="mt-1 w-full rounded-lg bg-[#0f0f0f] border border-white/10 px-3 py-2 font-mono text-xs" placeholder='[{"id":"main","name":"Bot","prefix":"/","sessionDir":"./sessions/main"}]'></textarea>
+        </label>
+      </section>
+
+      <div class="flex flex-wrap gap-3">
+        <button type="submit" class="px-6 py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-violet-600 to-violet-500 hover:opacity-95">Guardar en base de datos</button>
+        <a id="exportLink" href="#" class="px-6 py-2.5 rounded-xl border border-white/10 hover:bg-white/5">Descargar .env de referencia</a>
+        <button type="button" id="reloadCmd" class="px-6 py-2.5 rounded-xl border border-white/10 hover:bg-white/5">Recargar comandos</button>
+      </div>
+    </form>
+  </main>
+  <script src="layout.js"></script>
+  <script>
+    const form = document.getElementById('cfg');
+
+    async function load() {
+      const r = await apiFetch('/api/config');
+      const j = await r.json();
+      if (!j.ok) {
+        showToast(j.error || 'Error', 'error');
+        return;
+      }
+      for (const k of j.keys || []) {
+        const el = form.elements[k];
+        if (!el) continue;
+        const c = j.config[k];
+        if (c && c.masked && c.value && c.value.includes('**')) {
+          el.placeholder = 'Sin cambiar: deja vacío o pega valor nuevo';
+          el.value = '';
+        } else {
+          el.value = (c && c.value) || '';
+        }
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      showLoading();
+      const updates = {};
+      for (const k of [
+        'BOT_PREFIX','BOT_NAME','BOT_OWNER','SESSION_DIR','DATABASE_URL',
+        'GITHUB_TOKEN','GITHUB_REPO','GITHUB_BRANCH','SUBBOTS','LOG_LEVEL',
+        'JWT_SECRET','WEB_PORT','WA_SKIP_VERSION_FETCH',
+      ]) {
+        const el = form.elements[k];
+        if (el && el.value !== '') updates[k] = el.value;
+      }
+      const r = await apiFetch('/api/config/', {
+        method: 'PATCH',
+        body: JSON.stringify({ updates }),
+      });
+      const j = await r.json();
+      hideLoading();
+      showToast(j.ok ? 'Guardado' : (j.error || 'Error'), j.ok ? 'success' : 'error');
+      if (j.ok) load();
+    });
+
+    document.getElementById('testDb').addEventListener('click', async () => {
+      const ta = form.elements['DATABASE_URL'];
+      const databaseUrl = (ta && ta.value) ? ta.value : '';
+      document.getElementById('testDbResult').textContent = '…';
+      const r = await apiFetch('/api/config/test-database', {
+        method: 'POST',
+        body: JSON.stringify({ databaseUrl }),
+      });
+      const j = await r.json();
+      document.getElementById('testDbResult').textContent = j.ok ? 'OK' : (j.error || 'fail');
+      document.getElementById('testDbResult').className = j.ok ? 'text-emerald-400' : 'text-red-400';
+    });
+
+    document.getElementById('exportLink').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const r = await apiFetch('/api/config/export-env');
+      const t = await r.text();
+      const blob = new Blob([t], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'panel-env-export.txt';
+      a.click();
+      URL.revokeObjectURL(a.href);
+    });
+
+    document.getElementById('reloadCmd').addEventListener('click', async () => {
+      const r = await apiFetch('/api/commands/reload', { method: 'POST' });
+      const j = await r.json();
+      showToast(j.ok ? 'Comandos: ' + j.count : 'Error', j.ok ? 'success' : 'error');
+    });
+
+    load();
+  </script>
+</body>
+</html>

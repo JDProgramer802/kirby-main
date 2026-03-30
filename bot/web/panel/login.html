@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Login · Panel Kirby</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            bg: '#0f0f0f',
+            card: '#1a1a1a',
+            side: '#141414',
+            violet: { glow: '#a855f7', mid: '#7c3aed' },
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    .fade-in { animation: fadeIn 0.45s ease-out both; }
+  </style>
+</head>
+<body class="min-h-screen bg-bg text-gray-100 flex items-center justify-center p-4">
+  <div class="fade-in w-full max-w-md bg-card border border-white/10 rounded-2xl p-8 shadow-xl shadow-violet-mid/10">
+    <h1 class="text-2xl font-semibold text-center mb-1">Panel</h1>
+    <p class="text-center text-gray-400 text-sm mb-8">WhatsApp Bot</p>
+    <form id="f" class="space-y-4">
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Usuario</label>
+        <input name="u" required class="w-full bg-bg border border-white/10 rounded-xl px-3 py-2 outline-none focus:border-violet-mid focus:ring-1 focus:ring-violet-glow" />
+      </div>
+      <div>
+        <label class="block text-xs text-gray-400 mb-1">Contraseña</label>
+        <input name="p" type="password" required class="w-full bg-bg border border-white/10 rounded-xl px-3 py-2 outline-none focus:border-violet-mid focus:ring-1 focus:ring-violet-glow" />
+      </div>
+      <p id="err" class="text-red-400 text-sm hidden"></p>
+      <button type="submit" class="w-full py-2.5 rounded-xl font-medium text-white bg-gradient-to-r from-violet-mid to-violet-glow hover:opacity-95 transition">
+        Entrar
+      </button>
+    </form>
+  </div>
+  <script>
+    document.getElementById('f').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const err = document.getElementById('err');
+      err.classList.add('hidden');
+      const u = e.target.u.value;
+      const p = e.target.p.value;
+      try {
+        const r = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: u, password: p }),
+        });
+        const j = await r.json();
+        if (!j.ok || !j.token) {
+          err.textContent = j.error || 'Error';
+          err.classList.remove('hidden');
+          return;
+        }
+        localStorage.setItem('jwt', j.token);
+        location.href = 'dashboard.html';
+      } catch {
+        err.textContent = 'Red o servidor';
+        err.classList.remove('hidden');
+      }
+    });
+  </script>
+</body>
+</html>
