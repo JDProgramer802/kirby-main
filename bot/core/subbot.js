@@ -16,6 +16,9 @@ import { loadAuthState } from './session.js';
 /** Reintentos de reconexión por instancia (se resetea al abrir sesión). */
 const reconnectCount = new Map();
 
+/** Racha de 515 (restartRequired): no cuenta para MAX_RECONNECTS; WhatsApp pide reinicio de socket. */
+const restartRequiredStreak = new Map();
+
 const MAX_RECONNECTS = 25;
 
 /**
@@ -83,14 +86,38 @@ export async function startSubBot(opts) {
       unregisterInstance(instanceId);
       const code = getDisconnectCode(lastDisconnect);
       const errMsg = String(/** @type {any} */ (lastDisconnect?.error)?.message ?? '');
-      const n = (reconnectCount.get(instanceId) ?? 0) + 1;
-      reconnectCount.set(instanceId, n);
 
+      if (code === DisconnectReason.restartRequired) {
+        const s = (restartRequiredStreak.get(instanceId) ?? 0) + 1;
+        restartRequiredStreak.set(instanceId, s);
+        if (s === 1 || s === 15 || s === 40) {
+          console.warn(
+            `[${instanceId}] 515 = WhatsApp pidió reiniciar el stream (normal tras emparejar o actualizar). ` +
+              `Si se repite sin parar en GitHub Actions, las IPs de datacenter suelen ir mal: prueba VPS, Railway o emparejar en local y subir el artifact de sesión.`
+          );
+        }
+        if (s > 60) {
+          console.warn(
+            `[${instanceId}] Muchos 515 seguidos (${s}). Revisa red, sesión corrupta (${sessionDir}) o sesión usada en otro sitio.`
+          );
+        }
+      } else {
+        restartRequiredStreak.delete(instanceId);
+        const n = (reconnectCount.get(instanceId) ?? 0) + 1;
+        reconnectCount.set(instanceId, n);
+      }
+
+      const n = reconnectCount.get(instanceId) ?? 0;
       const shouldReconnect =
         code !== DisconnectReason.loggedOut && code !== 401 && n <= MAX_RECONNECTS;
 
+      const label =
+        code === DisconnectReason.restartRequired
+          ? `515 (racha ${restartRequiredStreak.get(instanceId) ?? 0})`
+          : `${n}/${MAX_RECONNECTS}`;
+
       console.log(
-        `[${instanceId}] Conexión cerrada. Código: ${code ?? '?'}. ${errMsg ? `(${errMsg.slice(0, 120)})` : ''} Reconectar: ${shouldReconnect} (${n}/${MAX_RECONNECTS})`
+        `[${instanceId}] Conexión cerrada. Código: ${code ?? '?'}. ${errMsg ? `(${errMsg.slice(0, 120)})` : ''} Reconectar: ${shouldReconnect} (${label})`
       );
 
       if (code === 405 || code === 408) {
@@ -100,7 +127,11 @@ export async function startSubBot(opts) {
       }
 
       if (shouldReconnect) {
-        const delay = Math.min(2000 + (n - 1) * 1500, 45_000);
+        const streak = restartRequiredStreak.get(instanceId) ?? 0;
+        const delay =
+          code === DisconnectReason.restartRequired
+            ? Math.min(400 + streak * 80, 8_000)
+            : Math.min(2000 + Math.max(0, n - 1) * 1500, 45_000);
         setTimeout(() => {
           startSubBot(opts).catch((e) => console.error(e));
         }, delay);
@@ -111,6 +142,7 @@ export async function startSubBot(opts) {
       }
     } else if (connection === 'open') {
       reconnectCount.delete(instanceId);
+      restartRequiredStreak.delete(instanceId);
       console.log(`[${instanceId}] Conectado como ${config.name}`);
       registerInstance(instanceId, sock, config);
       const owner = config.ownerNumbers?.[0] ?? '';
