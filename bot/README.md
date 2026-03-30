@@ -55,6 +55,17 @@ En **Settings → Actions → General → Workflow permissions** elige **Read an
 
 Si tu repo tiene el contenido de `bot/` **directamente en la raíz** (sin carpeta `bot/`), edita el workflow: `working-directory: .`, rutas `sessions/main` y `cache-dependency-path: package-lock.json`.
 
+### Código 515 en los logs (`Stream Errored (restart required)`)
+
+En Baileys, **515** es `restartRequired`: el servidor de WhatsApp pide cerrar y volver a abrir el socket. Suele **ser normal** justo después de escanear el QR o cuando hay actualización de protocolo; el bot **reconecta solo**.
+
+Si en **GitHub Actions** ves **515 una y otra vez** y la sesión no se estabiliza, las IPs de **datacenter** (GitHub, Azure, etc.) a menudo dan problemas con WhatsApp. Opciones:
+
+- Emparejar el bot **en tu PC** (`npm start`), dejar que guarde sesión, y luego **subir el artifact** o copiar `sessions/main` al flujo que uses.
+- Usar un **VPS**, **Railway**, **Render**, runner **self-hosted**, u otro servidor con IP residencial o estable.
+
+El job **no** “termina” en unos minutos: queda **hasta ~6 h** (o el `timeout-minutes` del workflow) ejecutando el bot; eso es esperado, no un “atasco”.
+
 ## Panel web (configuración)
 
 1. `npm run web` (o despliegue con `WEB_PORT` y `JWT_SECRET`).

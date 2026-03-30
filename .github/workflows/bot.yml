@@ -3,6 +3,10 @@
 # IMPORTANTE: un job hosted tiene límite ~6 h; no es un VPS 24/7 permanente.
 # Para 24/7 real: runner self-hosted, Railway, VPS, etc.
 #
+# Si ves "Código 515" / "Stream Errored (restart required)": es restartRequired en Baileys;
+# el bot reconecta. Si 515 se repite sin fin, las IPs de GitHub suelen ir mal con WhatsApp:
+# empareja en local y sube artifact de sesión, o usa VPS/self-hosted.
+#
 # Estructura del repo: carpeta `bot/` en la raíz del repositorio.
 #
 # ── Secrets (Settings → Secrets and variables → Actions) ─────────────────────
