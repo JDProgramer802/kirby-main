@@ -1,5 +1,6 @@
 import yts from 'yt-search';
 import { formatError } from '../../utils/formatter.js';
+import { getYtdlAgent } from '../../utils/youtubeAgent.js';
 
 export default {
   name: 'ytaudio',
@@ -45,7 +46,8 @@ export default {
       });
     }
     try {
-      const info = await ytdl.getInfo(url);
+      const agent = getYtdlAgent(ytdl);
+      const info = await ytdl.getInfo(url, agent ? { agent } : {});
       const fmt = ytdl.chooseFormat(info.formats, {
         quality: 'highestaudio',
         filter: 'audioonly',
